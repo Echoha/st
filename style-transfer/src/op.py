@@ -115,7 +115,7 @@ class op(object):
                     os.makedirs(train_output_dir)
                 filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
                 scm.imsave(os.path.join(train_output_dir, filename), im_output)
-                constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ['out_img'])
+                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['out_img'])
                 with tf.gfile.GFile('./model.pb', mode='wb') as f:
                   f.write(constant_graph.SerializeToString())
             else:
