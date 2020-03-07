@@ -99,7 +99,9 @@ class op(object):
 
             self.test_recon = self.mst_net(img, alpha=self.alpha, style_control=self.style_control, reuse=True)
             self.load()
-
+            
+            ##
+            output = tf.gather(self.test_recon, 0, name="out_img")
             im_output = self.sess.run(self.test_recon, feed_dict={img : im_input_4d})
             im_output = inverse_image(im_output[0])
 
@@ -113,11 +115,14 @@ class op(object):
                     os.makedirs(train_output_dir)
                 filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
                 scm.imsave(os.path.join(train_output_dir, filename), im_output)
+                constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ['out_img'])
+                with tf.gfile.GFile('./model.pb', mode='wb') as f:
+                  f.write(constant_graph.SerializeToString())
             else:
                 test_output_dir = os.path.join(self.project_dir, 'test_result')
                 filename = fn[:-4] + '_' + str(style_idx) + '_output.bmp'
                 scm.imsave(os.path.join(test_output_dir, filename), im_output)
-                self.save_as_pb(im_output)
+                # self.save_as_pb(im_output)
            
 
 
