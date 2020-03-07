@@ -11,15 +11,15 @@ def main():
 # Train ############################################################################################################
     parser.add_argument("-f", "--flag", type=distutils.util.strtobool, default='True')
     parser.add_argument("-gn", "--gpu_number", type=int, default=0)
-    parser.add_argument("-p", "--project", type=str, default=r"E:\毕设\STYLE_TRANSFER\onedrive\style-transfer\result\multi-result\MST")
-    # parser.add_argument("-p", "--project", type=str, default="/onedrive/style-transfer/result/multi-result/MST")
+    # parser.add_argument("-p", "--project", type=str, default=r"E:\毕设\STYLE_TRANSFER\onedrive\style-transfer\result\multi-result\MST")
+    parser.add_argument("-p", "--project", type=str, default="st/style-transfer/result/MST")
 
     ## Train images
-    parser.add_argument("-ctd", "--content_dataset", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\mock-coco\train2014")
-    # parser.add_argument("-ctd", "--content_dataset", type=str, default="/workspace/style-transfer/data/mock-coco/train2014")
+    # parser.add_argument("-ctd", "--content_dataset", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\mock-coco\train2014")
+    parser.add_argument("-ctd", "--content_dataset", type=str, default="st/style-transfer/data/val2017")
     parser.add_argument("-cts", "--content_data_size", type=int, default=256)
-    parser.add_argument("-sti", "--style_image", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\style-images\0_udnie.jpg")
-    # parser.add_argument("-sti", "--style_image", type=str, default="/workspace/style-transfer/data/style_images/0_udnie.jpg")
+    # parser.add_argument("-sti", "--style_image", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\style-images\0_udnie.jpg")
+    parser.add_argument("-sti", "--style_image", type=str, default="st/style-transfer/images/style_crop/0_udnie.jpg")
 
     ## Train Iteration
     parser.add_argument("-n",  "--niter", type=int, default=2)
@@ -39,8 +39,8 @@ def main():
     parser.add_argument("-lt", "--tv_loss_weight", type=float, default=2e2)
 
 # Test #############################################################################################################
-    parser.add_argument("-tsd", "--test_dataset", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\test")
-    # parser.add_argument("-tsd", "--test_dataset", type=str, default="/workspace/style-transfer/data/test")
+    # parser.add_argument("-tsd", "--test_dataset", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\test")
+    parser.add_argument("-tsd", "--test_dataset", type=str, default="st/style-transfer/images/test")
     parser.add_argument("-scw", "--style_control_weights", type=float, nargs=16)
 
     args = parser.parse_args()
