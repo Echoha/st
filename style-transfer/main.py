@@ -47,23 +47,23 @@ def main():
     gpu_number = args.gpu_number
     train_flag = args.flag
 
-    with tf.device('/gpu:{}'.format(gpu_number)):
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.85)
-        config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
+#     with tf.device('/gpu:{}'.format(gpu_number)):
+#         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.85)
+#         config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
 
-        with tf.Session(config=config) as sess:
-            ## Make Model
-            model = mst.mst(args, sess)
-            start = time.time()
-            ## TRAIN / TEST
-            if train_flag:
-                model.train(train_flag)
-                end = time.time()
-                print("train time:%.3f s"%(end-start))
-            else:
-                model.test(train_flag)
-                end = time.time()
-                print("test time:%.3f s"%(end-start))
+    with tf.Session() as sess:
+        ## Make Model
+        model = mst.mst(args, sess)
+        start = time.time()
+        ## TRAIN / TEST
+        if train_flag:
+            model.train(train_flag)
+            end = time.time()
+            print("train time:%.3f s"%(end-start))
+        else:
+            model.test(train_flag)
+            end = time.time()
+            print("test time:%.3f s"%(end-start))
 
 
 if __name__ == '__main__':
