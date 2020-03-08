@@ -115,14 +115,23 @@ class op(object):
                     os.makedirs(train_output_dir)
                 filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
                 scm.imsave(os.path.join(train_output_dir, filename), im_output)
-                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['out_img'])
-                with tf.gfile.GFile('./model.pb', mode='wb') as f:
-                  f.write(constant_graph.SerializeToString())
+                
+                
             else:
                 test_output_dir = os.path.join(self.project_dir, 'test_result')
                 filename = fn[:-4] + '_' + str(style_idx) + '_output.bmp'
                 scm.imsave(os.path.join(test_output_dir, filename), im_output)
                 # self.save_as_pb(im_output)
+                #pb格式
+                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['out_img'])
+                with tf.gfile.GFile('./model.pb', mode='wb') as f:
+                  f.write(constant_graph.SerializeToString())
+                # #保存SavedModel模型
+                style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
+                builder = tf.saved_model.builder.SavedModelBuilder('savemodel')
+                signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'img':img, 'style_control':style_control}, outputs={'out_img':output})
+                builder.add_meta_graph_and_variables(self.sess,[tf.saved_model.tag_constants.SERVING],signature_def_map={'default_serving': signature})
+                builder.save()
            
 
 
