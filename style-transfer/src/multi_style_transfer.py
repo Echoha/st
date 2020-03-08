@@ -15,7 +15,7 @@ class mst(op):
         with tf.variable_scope(tf.get_variable_scope(), reuse=reuse):
             b,h,w,c = x.get_shape().as_list()
 
-           x = conv_layer(x, int(alpha*32), 9, 1, style_control=style_control, name='conv1')
+            x = conv_layer(x, int(alpha*32), 9, 1, style_control=style_control, name='conv1')
             x = conv_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='conv2')
             x = conv_layer(x, int(alpha*128), 3, 2, style_control=style_control, name='conv3')
             x = residual_block(x, int(alpha * 128), 3, style_control=style_control, name='res1')
