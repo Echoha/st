@@ -96,8 +96,12 @@ class op(object):
 
             ## Run Model
             img = tf.placeholder(tf.float32, [im_b, im_h, im_w, im_c], name='img')
+            
+            #rebuild style_control
+            style_idx = ['{0}_{1}'.format(i, x) for i, x in enumerate(self.style_control) if not x == 0]
+            style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
 
-            self.test_recon = self.mst_net(img, alpha=self.alpha, style_control=self.style_control, reuse=True)
+            self.test_recon = self.mst_net(img, alpha=self.alpha, style_control=style_control, reuse=True)
             self.load()
             
             ##
@@ -105,7 +109,7 @@ class op(object):
             im_output = self.sess.run(self.test_recon, feed_dict={img : im_input_4d})
             im_output = inverse_image(im_output[0])
 
-            style_idx = ['{0}_{1}'.format(i, x) for i, x in enumerate(self.style_control) if not x == 0]
+           
 
             ## Image Show & Save
             style_name = os.path.split(self.style_image)[-1].split('.')[0]
@@ -118,6 +122,12 @@ class op(object):
                 constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['out_img'])
                 with tf.gfile.GFile('./model.pb', mode='wb') as f:
                   f.write(constant_graph.SerializeToString())
+                # #保存SavedModel模型
+                builder = tf.saved_model.builder.SavedModelBuilder('savemodel')
+                signature = predict_signature_def(inputs={'img':img, 'style_control':style_control}, outputs={'out_img':output})
+                builder.add_meta_graph_and_variables(sess,[tf.saved_model.tag_constants.SERVING],signature_def_map={'predict': signature})
+                builder.save()
+
             else:
                 test_output_dir = os.path.join(self.project_dir, 'test_result')
                 filename = fn[:-4] + '_' + str(style_idx) + '_output.bmp'
