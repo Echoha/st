@@ -2,6 +2,7 @@ import time
 import tensorflow as tf
 from src.functions import *
 from tensorflow.python.framework import graph_util
+import time
 
 class op(object):
 
@@ -116,7 +117,7 @@ class op(object):
                 filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
                 scm.imsave(os.path.join(train_output_dir, filename), im_output)
                 # #保存SavedModel模型
-                savemodel_dir = os.path.join(self.project_dir, 'savemodel_' + style_name + '_' + str(self.count))
+                savemodel_dir = os.path.join(self.project_dir, 'savemodel_' + style_name + '_' + str(self.count) + '_' + str(fn) + '_' + str(int(time.time())))
                 style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
                 builder = tf.saved_model.builder.SavedModelBuilder(savemodel_dir)
                 signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'img':img, 'style_control':style_control}, outputs={'out_img':output})
