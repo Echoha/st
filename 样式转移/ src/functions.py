@@ -16,12 +16,17 @@ def get_content_image(img_path, size):
         return img
         
 def get_image(img_path, size=None):
-    img = scm.imread(img_path, mode='RGB')
-    h, w, c = np.shape(img)
-    img = img[:h, :w, ::-1]  # rgb to bgr
-    if size:
+    suffix_list = ['.jpg', '.JPG', '.jpeg', '.JPEG']
+    suffix = os.path.splitext(img_path)
+    if suffix[1] in suffix_list:
+      img = scm.imread(img_path, mode='RGB')
+      h, w, c = np.shape(img)
+      img = img[:h, :w, ::-1]  # rgb to bgr
+      if size:
         img = scm.imresize(img, (size, size))
-    return img
+      return img
+    else:
+      return np.zeros([265, 256, 3], np.uint8)
 
 
 def inverse_image(img):
