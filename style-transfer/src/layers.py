@@ -51,7 +51,7 @@ def residual_block(net, num_filters=128, filter_size=3, style_control=None, name
     with tf.variable_scope(name+'_a'):
         tmp = conv_layer(net, num_filters, filter_size, 1, style_control=style_control)
     with tf.variable_scope(name+'_b'):
-        output = net + conv_layer(tmp, number_filters, filter_size, 1, style_control=style_control, relu=False)
+        output = net + conv_layer(tmp, num_filters, filter_size, 1, style_control=style_control, relu=False)
     return output
 
 
