@@ -1,5 +1,4 @@
 import scipy.io
-import numpy as np
 import src.vgg19 as vgg
 
 from src.op import op
@@ -15,17 +14,17 @@ class mst(op):
         with tf.variable_scope(tf.get_variable_scope(), reuse=reuse):
             b,h,w,c = x.get_shape().as_list()
 
-            x = conv_layer(x, np.int(alpha*32), 9, 1, style_control=style_control, name='conv1')
-            x = conv_layer(x, np.int(alpha*64), 3, 2, style_control=style_control, name='conv2')
-            x = conv_layer(x, np.int(alpha*128), 3, 2, style_control=style_control, name='conv3')
-            x = residual_block(x, 3, style_control=style_control, name='res1')
-            x = residual_block(x, 3, style_control=style_control, name='res2')
-            x = residual_block(x, 3, style_control=style_control, name='res3')
-            x = residual_block(x, 3, style_control=style_control, name='res4')
-            x = residual_block(x, 3, style_control=style_control, name='res5')
-            x = conv_tranpose_layer(x, np.int(alpha*64), 3, 2, style_control=style_control, name='up_conv1')
+            x = conv_layer(x, int(alpha*32), 9, 1, style_control=style_control, name='conv1')
+            x = conv_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='conv2')
+            x = conv_layer(x, int(alpha*128), 3, 2, style_control=style_control, name='conv3')
+            x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res1')
+            x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res2')
+            x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res3')
+            x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res4')
+            x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res5')
+            x = conv_tranpose_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='up_conv1')
             x = pooling(x)
-            x = conv_tranpose_layer(x, np.int(alpha*32), 3, 2, style_control=style_control, name='up_conv2')
+            x = conv_tranpose_layer(x, int(alpha*32), 3, 2, style_control=style_control, name='up_conv2')
             x = pooling(x)
             x = conv_layer(x, 3, 9, 1, relu=False, style_control=style_control,  name='output')
             preds = tf.nn.tanh(x) * 150 + 255./2
