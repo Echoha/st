@@ -91,12 +91,16 @@ class op(object):
         for fn in os.listdir(self.test_dataset):
 
             ## Read RGB Image
-            im_input = get_image(self.test_dataset + '/' + fn)
+            if Train_flag:
+              im_input = get_image(self.test_dataset + '/' + fn, 256)
+            else:
+              im_input = get_image(self.test_dataset + '/' + fn, 512)
             im_input_4d = im_input[np.newaxis, ...]
             im_b, im_h, im_w, im_c = np.shape(im_input_4d)
 
             ## Run Model
             img = tf.placeholder(tf.float32, [im_b, im_h, im_w, im_c], name='img')
+
 
             self.test_recon = self.mst_net(img, alpha=self.alpha, style_control=self.style_control, reuse=True)
             self.load()
@@ -105,6 +109,7 @@ class op(object):
             output = tf.gather(self.test_recon, 0, name="out_img")
             im_output = self.sess.run(self.test_recon, feed_dict={img : im_input_4d})
             im_output = inverse_image(im_output[0])
+            
 
             style_idx = ['{0}_{1}'.format(i, x) for i, x in enumerate(self.style_control) if not x == 0]
 
@@ -116,13 +121,8 @@ class op(object):
                     os.makedirs(train_output_dir)
                 filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
                 scm.imsave(os.path.join(train_output_dir, filename), im_output)
-                # #保存SavedModel模型
-                savemodel_dir = os.path.join(self.project_dir, 'savemodel_' + style_name + '_' + str(self.count) + '_' + str(fn) + '_' + str(int(time.time())))
-                style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
-                builder = tf.saved_model.builder.SavedModelBuilder(savemodel_dir)
-                signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'img':img, 'style_control':style_control}, outputs={'out_img':output})
-                builder.add_meta_graph_and_variables(self.sess,[tf.saved_model.tag_constants.SERVING],signature_def_map={'default_serving': signature})
-                builder.save()
+                
+                # style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
                 
             else:
                 test_output_dir = os.path.join(self.project_dir, 'test_result')
@@ -130,9 +130,16 @@ class op(object):
                   os.makedirs(test_output_dir)
                 filename = fn[:-4] + '_' + str(style_idx) + '_output.bmp'
                 scm.imsave(os.path.join(test_output_dir, filename), im_output)
+                im_output = tf.placeholder(tf.float32, [im_h, im_w, im_c], name='im_output')
                 # self.save_as_pb(im_output)
+                # #保存SavedModel模型
+                savemodel_dir = os.path.join(self.project_dir, 'savemodel_' + style_name + '_'  + '_' + str(fn) + '_' + str(int(time.time())))
+                builder = tf.saved_model.builder.SavedModelBuilder(savemodel_dir)
+                signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'img':img}, outputs={'im_output': im_output})
+                builder.add_meta_graph_and_variables(self.sess,[tf.saved_model.tag_constants.SERVING],signature_def_map={'default_serving': signature})
+                builder.save()
                 #pb格式
-                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['out_img'])
+                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['im_output'])
                 with tf.gfile.GFile('./model.pb', mode='wb') as f:
                   f.write(constant_graph.SerializeToString())
                 
