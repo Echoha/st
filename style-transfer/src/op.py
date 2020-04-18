@@ -103,7 +103,7 @@ class op(object):
 
                 _, loss_all, loss_c, loss_s, loss_tv = self.sess.run(self.optimize, feed_dict=feeds)
                 train_time = time.time() - start_time
-                if count % self.niter_snapshot == int((self.niter_snapshot - 1) / 2) or :
+                if count % self.niter_snapshot == int((self.niter_snapshot - 1) / 2) :
                     print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
                         % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                 
