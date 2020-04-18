@@ -2,7 +2,7 @@ import tensorflow as tf
 from functools import reduce
 
 def conv_layer(net, num_filters, filter_size, strides, style_control=None, relu=True, name='conv'):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name, reuse = tf.AUTO.RESUSE):
         b,w,h,c = net.get_shape().as_list()
         weights_shape = [filter_size, filter_size, c, num_filters]
         weights_init = tf.get_variable(name, shape=weights_shape, initializer=tf.truncated_normal_initializer(stddev=.01))
@@ -23,7 +23,7 @@ def conv_layer(net, num_filters, filter_size, strides, style_control=None, relu=
 
 
 def conv_tranpose_layer(net, num_filters, filter_size, strides, style_control=None, name='conv_t'):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name,reuse = tf.AUTO.RESUSE):
         b, w, h, c = net.get_shape().as_list()
         weights_shape = [filter_size, filter_size, num_filters, c]
         weights_init = tf.get_variable(name, shape=weights_shape, initializer=tf.truncated_normal_initializer(stddev=.01))
@@ -48,7 +48,7 @@ def conv_tranpose_layer(net, num_filters, filter_size, strides, style_control=No
 
 
 def residual_block(net, num_filters=128, filter_size=3, style_control=None, name='res'):
-    with tf.variable_scope(name+'_a'):
+    with tf.variable_scope(name+'_a',reuse = tf.AUTO.RESUSE):
         tmp = conv_layer(net, num_filters, filter_size, 1, style_control=style_control)
     with tf.variable_scope(name+'_b'):
         output = net + conv_layer(tmp, num_filters, filter_size, 1, style_control=style_control, relu=False)
@@ -56,7 +56,7 @@ def residual_block(net, num_filters=128, filter_size=3, style_control=None, name
 
 
 def conditional_instance_norm(net, style_control=None, name='cond_in'):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name,reuse = tf.AUTO.RESUSE):
         batch, rows, cols, channels = [i.value for i in net.get_shape()]
         mu, sigma_sq = tf.nn.moments(net, [1,2], keep_dims=True)
 
@@ -81,7 +81,7 @@ def conditional_instance_norm(net, style_control=None, name='cond_in'):
 
 
 def instance_norm(net, train=True, name='in'):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name,reuse = tf.AUTO.RESUSE):
         batch, rows, cols, channels = [i.value for i in net.get_shape()]
         var_shape = [channels]
         mu, sigma_sq = tf.nn.moments(net, [1,2], keep_dims=True)
