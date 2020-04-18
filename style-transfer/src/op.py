@@ -3,9 +3,11 @@ import tensorflow as tf
 from src.functions import *
 from tensorflow.python.framework import graph_util
 import time
-
+from tensorflow.python.tools.freeze_graph import freeze_graph
+from tensorflow.python import pywrap_tensorflow
 class op(object):
 
+    
     def __init__(self, args, sess):
         self.sess = sess
 
@@ -17,6 +19,28 @@ class op(object):
         self.content_dataset = args.content_dataset ## test2015
         self.content_data_size = args.content_data_size
         self.style_image = args.style_image
+
+        # result dir
+        self.result_dir = args.result_dir
+        if tf.gfile.Exists(self.result_dir):
+          tf.gfile.DeleteRecursively(self.result_dir)
+        else:
+          tf.gfile.MakeDirs(self.result_dir)
+        ### graph names
+        self.graph_model_dir = os.path.join(self.result_dir,'model')
+        if tf.gfile.Exists(self.graph_model_dir):
+          tf.gfile.DeleteRecursively(self.graph_model_dir)
+        else:
+          tf.gfile.MakeDirs(self.graph_model_dir)
+        self.graph_model_name = self.result_dir + '_graph'
+        ### save result image
+        self.result_image_dir = os.path.join(self.result_dir, 'image')
+        if tf.gfile.Exists(self.result_image_dir):
+          tf.gfile.DeleteRecursively(self.result_image_dir)
+        else:
+          tf.gfile.MakeDirs(self.result_image_dir)
+
+        
 
         ## Train Iteration
         self.niter = args.niter
@@ -40,7 +64,9 @@ class op(object):
         self.ckpt_dir = os.path.join(self.project_dir, 'models')
 
         ## Test
-        self.test_dataset = args.test_dataset
+        
+        # self.test_dataset = args.test_dataset
+        self.test_image = args.test_image
         self.style_control = args.style_control_weights
 
         ## build model
@@ -80,72 +106,42 @@ class op(object):
                 print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
                       % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                 
+                
                 ## Test during Training
                 if count % self.niter_snapshot == (self.niter_snapshot-1):
                     self.count = count
                     self.save()
-                    self.test(Train_flag)
+                    
+                    
+                    # Freeze graph.
+                    # saver = tf.train.Saver()
+                    if os.path.isdir(self.ckpt_dir):
+                        ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
+                        if ckpt and ckpt.model_checkpoint_path:
+                            self.load()
+                        else:
+                            raise Exception("No checkpoint found...")
+                    else:
+                        ckpt = saver.restore(self.sess, self.ckpt_dir)
+                    # save model graph
+                    self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
+                    freeze_graph(
+                        input_graph=os.path.join(self.graph_model_dir,self.graph_model_name + '.pb.txt'),
+                        input_saver='',
+                        input_binary=False,
+                        input_checkpoint=ckpt.model_checkpoint_path,
+                        output_node_names='output_1',
+                        restore_op_name='save/restore_all',
+                        filename_tensor_name='save/Const:0',
+                        output_graph=os.path.join(self.graph_model_dir, self.graph_model_name + '_frozen.pb'),
+                        clear_devices=False,
+                        initializer_nodes='')
+                    print('save frozen graph down')
+          
 
 
-    def test(self, Train_flag=True):
-        for fn in os.listdir(self.test_dataset):
-
-            ## Read RGB Image
-            if Train_flag:
-              im_input = get_image(self.test_dataset + '/' + fn, 256)
-            else:
-              im_input = get_image(self.test_dataset + '/' + fn, 512)
-            im_input_4d = im_input[np.newaxis, ...]
-            im_b, im_h, im_w, im_c = np.shape(im_input_4d)
-
-            ## Run Model
-            img = tf.placeholder(tf.float32, [im_b, im_h, im_w, im_c], name='img')
-
-
-            self.test_recon = self.mst_net(img, alpha=self.alpha, style_control=self.style_control, reuse=True)
-            self.load()
-            
-            ##
-            output = tf.gather(self.test_recon, 0, name="out_img")
-            im_output = self.sess.run(self.test_recon, feed_dict={img : im_input_4d})
-            im_output = inverse_image(im_output[0])
-            
-
-            style_idx = ['{0}_{1}'.format(i, x) for i, x in enumerate(self.style_control) if not x == 0]
-
-            ## Image Show & Save
-            style_name = os.path.split(self.style_image)[-1].split('.')[0]
-            if Train_flag:
-                train_output_dir = os.path.join(self.project_dir, 'train_result', style_name)
-                if not os.path.exists(train_output_dir):
-                    os.makedirs(train_output_dir)
-                filename = fn[:-4] + '_' + str(style_idx) + '_' + str(self.count) + '_output.bmp'
-                scm.imsave(os.path.join(train_output_dir, filename), im_output)
-                
-                # style_control = tf.placeholder(tf.float32, self.style_control, name='style_control')
-                
-            else:
-                test_output_dir = os.path.join(self.project_dir, 'test_result')
-                if not os.path.exists(test_output_dir):
-                  os.makedirs(test_output_dir)
-                filename = fn[:-4] + '_' + str(style_idx) + '_output.bmp'
-                scm.imsave(os.path.join(test_output_dir, filename), im_output)
-                im_output = tf.placeholder(tf.float32, [im_h, im_w, im_c], name='im_output')
-                # self.save_as_pb(im_output)
-                # #保存SavedModel模型
-                savemodel_dir = os.path.join(self.project_dir, 'savemodel_' + style_name + '_'  + '_' + str(fn) + '_' + str(int(time.time())))
-                builder = tf.saved_model.builder.SavedModelBuilder(savemodel_dir)
-                signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'img':img}, outputs={'im_output': im_output})
-                builder.add_meta_graph_and_variables(self.sess,[tf.saved_model.tag_constants.SERVING],signature_def_map={'default_serving': signature})
-                builder.save()
-                #pb格式
-                constant_graph = tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ['im_output'])
-                with tf.gfile.GFile('./model.pb', mode='wb') as f:
-                  f.write(constant_graph.SerializeToString())
-                
-           
-
-
+    
+      
     def save(self):
         style_name = os.path.basename(self.style_image)[:-4]
         self.model_name = "{0}.model".format(style_name)
@@ -153,15 +149,61 @@ class op(object):
         if not os.path.exists(self.ckpt_dir):
             os.makedirs(self.ckpt_dir)
         self.saver.save(self.sess, os.path.join(self.ckpt_dir, self.model_name), global_step=self.count)
-
-
+        
     def load(self):
         ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
         ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
         self.saver.restore(self.sess, os.path.join(self.ckpt_dir, ckpt_name))
-    def save_as_pb(self, im_output):
-        style_name = os.path.basename(self.style_image)[:-4]
-        self.pb_filename = "{0}_{1}.pb".format(self.project_name,style_name)
-        constant_graph = graph_util.convert_variables_to_constant(self.sess, self.sess.graph_def, ['im_output'])
-        with tf.gfile.GFile(os.path.join(self.ckpt_dir, self.pb_filename), mode='wb') as f:
-            f.write(constant_graph.SerialzeToString())
+    
+    def evaluate_img(self, img_in, img_path):
+      img_shape = (512, 512, 3)
+      batch_shape = (1,512, 512, 3)
+          
+      soft_config = tf.ConfigProto(allow_soft_placement=True)
+      soft_config.gpu_options.allow_growth = True
+      with tf.Graph().as_default(), tf.Session(config=soft_config) as sess:
+          # Declare placeholders we'll feed into the graph
+          X_inputs = tf.placeholder(
+              tf.float32, [1, 512, 512, 3], name='X_inputs')
+
+          # Define output node
+          preds = self.mst_net(X_inputs, alpha=self.alpha, style_control=self.style_control, reuse=True)
+          tf.identity(preds[0], name='output')
+          print(preds)
+
+          # For restore training checkpoints (important)
+          # saver = tf.train.Saver()
+          # ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
+          # saver.restore(sess, ckpt)  # run
+          saver = tf.train.Saver()
+          if os.path.isdir(self.ckpt_dir):
+              ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
+              if ckpt and ckpt.model_checkpoint_path:
+                  saver.restore(sess, ckpt.model_checkpoint_path)  # run
+              else:
+                  raise Exception("No checkpoint found...")
+          else:
+              ckpt = saver.restore(sess, self.ckpt_dir)
+          
+
+          X = np.zeros(batch_shape, dtype=np.float32)  # feed
+
+          img = get_img(img_in, img_shape)
+          X[0] = img
+
+          _preds = sess.run(preds, feed_dict={X_inputs: X})
+          save_img(img_path, _preds[0])
+
+          # Write graph.
+          # start_time = time.time()
+          tf.train.write_graph(
+              sess.graph.as_graph_def(),
+              self.graph_model_dir,
+              self.graph_model_name + '.pb',
+              as_text=False)
+          tf.train.write_graph(
+              sess.graph.as_graph_def(),
+              self.graph_model_dir,
+              self.graph_model_name + '.pb.txt',
+              as_text=True)
+          print('Save pb and pb.txt done!')
