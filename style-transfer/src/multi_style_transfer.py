@@ -49,7 +49,7 @@ class mst(op):
         # VGG network
         # VGG19 pat
         # weights = scipy.io.loadmat(r'E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\vgg19\imagenet-vgg-verydeep-19.mat')
-        weights = scipy.io.loadmat('st/style-transfer/data/vgg19/imagenet-vgg-verydeep-19.mat')
+        weights = scipy.io.loadmat('st/style-transfer/data/imagenet-vgg-verydeep-19.mat')
         vgg_mean = tf.constant(np.array([103.939, 116.779, 123.68]).reshape((1, 1, 1, 3)), dtype='float32')
 
         content_feats = vgg.net(self.content_input - vgg_mean, weights)
