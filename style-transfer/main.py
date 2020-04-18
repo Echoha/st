@@ -20,7 +20,8 @@ def main():
     parser.add_argument("-cts", "--content_data_size", type=int, default=256)
     # parser.add_argument("-sti", "--style_image", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\style-images\0_udnie.jpg")
     parser.add_argument("-sti", "--style_image", type=str, default="st/style-transfer/images/style_crop/0_udnie.jpg")
-
+    ## train dirs
+    parser.add_argument('-rd', '--result_dir', type=str, default='wave')
     ## Train Iteration
     parser.add_argument("-n",  "--niter", type=int, default=2)
     parser.add_argument("-ns", "--nsnapshot", type=int, default=1000)
@@ -40,7 +41,7 @@ def main():
 
 # Test #############################################################################################################
     # parser.add_argument("-tsd", "--test_dataset", type=str, default=r"E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\test")
-    parser.add_argument("-tsd", "--test_dataset", type=str, default="st/style-transfer/images/test")
+    parser.add_argument("-ti", "--test_image", type=str, default="st/style-transfer/images/test/chicago.jpg")
     parser.add_argument("-scw", "--style_control_weights", type=float, nargs=16)
 
     args = parser.parse_args()
