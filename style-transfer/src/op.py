@@ -103,16 +103,20 @@ class op(object):
 
                 _, loss_all, loss_c, loss_s, loss_tv = self.sess.run(self.optimize, feed_dict=feeds)
                 train_time = time.time() - start_time
-                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
-                      % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
+                if count % self.niter_snapshot == int((self.niter_snapshot - 1) / 2) or :
+                    print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
+                        % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                 
                 
                 ## Test during Training
                 if count % self.niter_snapshot == (self.niter_snapshot-1):
+                    print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
+                        % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                     self.count = count
                     self.save()
                     
-                    
+                    # save model graph
+                    self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
                     # Freeze graph.
                     # saver = tf.train.Saver()
                     if os.path.isdir(self.ckpt_dir):
@@ -122,9 +126,7 @@ class op(object):
                         else:
                             raise Exception("No checkpoint found...")
                     else:
-                        ckpt = saver.restore(self.sess, self.ckpt_dir)
-                    # save model graph
-                    self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
+                        ckpt = self.saver.save(self.sess, os.path.join(self.ckpt_dir, self.model_name), global_step=self.count)
                     freeze_graph(
                         input_graph=os.path.join(self.graph_model_dir,self.graph_model_name + '.pb.txt'),
                         input_saver='',
@@ -169,7 +171,7 @@ class op(object):
           # Define output node
           preds = self.mst_net(X_inputs, alpha=self.alpha, style_control=self.style_control, reuse=True)
           tf.identity(preds[0], name='output')
-          print(preds)
+          
 
           # For restore training checkpoints (important)
           # saver = tf.train.Saver()
@@ -207,3 +209,4 @@ class op(object):
               self.graph_model_name + '.pb.txt',
               as_text=True)
           print('Save pb and pb.txt done!')
+    
