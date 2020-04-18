@@ -3,6 +3,20 @@ import numpy as np
 import scipy.misc as scm
 from glob import glob
 
+import cv2
+def save_img(out_path, img):
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    scm.imsave(out_path, img)
+def get_img(src, img_size=False):
+	img = cv2.imread(src)[:,:,(2,1,0)]
+	if not (len(img.shape) == 3 and img.shape[2] == 3):
+		img = np.dstack((img, img, img))
+	if img_size is not False:
+		img_target_size = (img_size[0],img_size[1])
+		img = cv2.resize(img,img_target_size,interpolation = cv2.INTER_CUBIC)
+	return img
+
+
 
 def get_content_image(img_path, size):
     suffix_list = ['.jpg', '.JPG', '.jpeg', '.JPEG']
