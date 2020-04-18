@@ -32,7 +32,6 @@ def net(input_image, data):
     for i, name in enumerate(layers):
         kind = name[:4]
         if kind == 'conv':
-            print(weights[i][0][0][0][0])
             kernels, bias = weights[i][0][0][0][0]
             # matconvnet: weights are [width, height, in_channels, out_channels]
             # tensorflow: weights are [height, width, in_channels, out_channels]
