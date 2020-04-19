@@ -213,4 +213,5 @@ class op(object):
               self.graph_model_name + '.pb.txt',
               as_text=True)
           print('Save pb and pb.txt done!')
+         
     
