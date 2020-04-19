@@ -27,12 +27,12 @@ class op(object):
         else:
           tf.gfile.MakeDirs(self.result_dir)
         ### graph names
-        self.graph_model_dir = os.path.join(self.result_dir,'model')
+        self.graph_model_dir = os.path.join(self.result_dir,os.path.basename(self.style_image)[:-4])
         if tf.gfile.Exists(self.graph_model_dir):
           tf.gfile.DeleteRecursively(self.graph_model_dir)
         else:
           tf.gfile.MakeDirs(self.graph_model_dir)
-        self.graph_model_name = self.result_dir + '_graph'
+        self.graph_model_name = os.path.basename(self.style_image)[:-4] + '_graph'
         ### save result image
         self.result_image_dir = os.path.join(self.result_dir, 'image')
         if tf.gfile.Exists(self.result_image_dir):
@@ -97,15 +97,15 @@ class op(object):
                 count += 1
 
                 batch_files = data[idx * self.batch_size: (idx + 1) * self.batch_size]
-                batch_label = [(get_image(batch_file, self.content_data_size)) for batch_file in batch_files]
+                batch_label = [(get_img(batch_file, (self.content_data_size,self.content_data_size,3))) for batch_file in batch_files]
 
                 feeds = {self.content_input: batch_label}
 
                 _, loss_all, loss_c, loss_s, loss_tv = self.sess.run(self.optimize, feed_dict=feeds)
                 train_time = time.time() - start_time
-                if count % self.niter_snapshot == int((self.niter_snapshot - 1) / 2) :
-                    print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
-                        % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
+                if count % int((self.niter_snapshot - 1) / 2) == 1 :
+                  print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
+                      % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                 
                 
                 ## Test during Training
@@ -114,36 +114,40 @@ class op(object):
                         % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                     self.count = count
                     self.save()
-                    
                     # save model graph
-                    self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
-                    # Freeze graph.
-                    # saver = tf.train.Saver()
-                    if os.path.isdir(self.ckpt_dir):
-                        ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
-                        if ckpt and ckpt.model_checkpoint_path:
-                            self.load()
-                        else:
-                            raise Exception("No checkpoint found...")
-                    else:
-                        ckpt = self.saver.save(self.sess, os.path.join(self.ckpt_dir, self.model_name), global_step=self.count)
-                    freeze_graph(
-                        input_graph=os.path.join(self.graph_model_dir,self.graph_model_name + '.pb.txt'),
-                        input_saver='',
-                        input_binary=False,
-                        input_checkpoint=ckpt.model_checkpoint_path,
-                        output_node_names='output_1',
-                        restore_op_name='save/restore_all',
-                        filename_tensor_name='save/Const:0',
-                        output_graph=os.path.join(self.graph_model_dir, self.graph_model_name + '_frozen.pb'),
-                        clear_devices=False,
-                        initializer_nodes='')
-                    print('save frozen graph down')
-          
+                    self.test(Train_flag)
+                    
+                    
+    def test(self, train_flag):
+      if train_flag:
+        self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir,str(self.count)+'.jpg'))
+      else:
 
-
-    
+        self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, 'multi.jpg'))
       
+        # self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
+        # Freeze graph.
+        # saver = tf.train.Saver()
+        if os.path.isdir(self.ckpt_dir):
+            ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
+            if ckpt and ckpt.model_checkpoint_path:
+                self.load()
+            else:
+                raise Exception("No checkpoint found...")
+        else:
+            ckpt = self.saver.save(self.sess, os.path.join(self.ckpt_dir, self.model_name), global_step=self.count)
+        freeze_graph(
+            input_graph=os.path.join(self.graph_model_dir,self.graph_model_name + '.pb.txt'),
+            input_saver='',
+            input_binary=False,
+            input_checkpoint=ckpt.model_checkpoint_path,
+            output_node_names='output_1',
+            restore_op_name='save/restore_all',
+            filename_tensor_name='save/Const:0',
+            output_graph=os.path.join(self.graph_model_dir, self.graph_model_name + '_frozen.pb'),
+            clear_devices=False,
+            initializer_nodes='')
+        print('save frozen graph down')
     def save(self):
         style_name = os.path.basename(self.style_image)[:-4]
         self.model_name = "{0}.model".format(style_name)
