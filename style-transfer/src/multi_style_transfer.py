@@ -38,7 +38,7 @@ class mst(op):
         self.content_input = tf.placeholder(tf.float32, shape=[b, h, w, 3], name='content_input')
 
         # style_input
-        style_img = get_image(self.style_image)
+        style_img = get_img(self.style_image)
         style_idx = [i for i, x in enumerate(self.style_control) if not x == 0][0]
         print('style_idx : {}'.format(style_idx))
         style_input = tf.constant((style_img[np.newaxis, ...]), dtype=tf.float32)
