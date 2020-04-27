@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser()
 
 # Train ############################################################################################################
-    parser.add_argument("-f", "--flag", type=distutils.util.strtobool, default='True')
+    parser.add_argument("-f", "--flag", type=distutils.util.strtobool, default='False')
     parser.add_argument("-gn", "--gpu_number", type=int, default=0)
     # parser.add_argument("-p", "--project", type=str, default=r"E:\毕设\STYLE_TRANSFER\onedrive\style-transfer\result\multi-result\MST")
     parser.add_argument("-p", "--project", type=str, default="st/style-transfer/result/MST")
