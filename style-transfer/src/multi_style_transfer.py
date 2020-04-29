@@ -23,9 +23,9 @@ class mst(op):
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res4')
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res5')
             x = conv_tranpose_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='up_conv1')
-            x = pooling(x)
+            # x = pooling(x)
             x = conv_tranpose_layer(x, int(alpha*32), 3, 2, style_control=style_control, name='up_conv2')
-            x = pooling(x)
+            # x = pooling(x)
             x = conv_layer(x, 3, 9, 1, relu=False, style_control=style_control,  name='output')
             preds = tf.nn.tanh(x) * 150 + 255./2
         return preds
