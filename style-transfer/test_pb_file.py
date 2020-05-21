@@ -3,7 +3,6 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0";
 
 import sys
-sys.path[0] = "/tensorflow-2.1.0/python3.6"
 import tensorflow as tf	 
 import cv2	
 import time
@@ -36,20 +35,25 @@ def main(args):
       _ = tf.import_graph_def(graph_def, name='') 
     with tf.Session() as sess:
       tf.initialize_all_variables().run()
-      input_name = graph_def.node[0].name
-      print('Input node name: ', input_name)
+      
+      x_input_name = graph_def.node[0].name
+      style_choose_input_name = graph_def.node[1].name
+      
+      print('Input node name: ', x_input_name, style_choose_input_name)
       output_name = graph_def.node[-1].name
       print('Output node name: ', output_name)
-      input_x = sess.graph.get_tensor_by_name(str(input_name)+":0")
+      input_x = sess.graph.get_tensor_by_name(str(x_input_name)+":0")
       print(input_x)
+      input_style_choose = sess.graph.get_tensor_by_name(str(style_choose_input_name)+":0")
+      print(input_style_choose)
       output = sess.graph.get_tensor_by_name(str(output_name)+":0")
       print(output)
 
       # converter = tf.lite.TFLiteConverter.from_frozen_graph(output_graph_path, input_arrays=[input_name], input_shapes={'input':[512, 512, 3]},output_arrays=[output_name])
-      converter = tf.lite.TFLiteConverter.from_frozen_graph(output_graph_path, input_arrays=[input_name],output_arrays=[output_name])
+      '''converter = tf.lite.TFLiteConverter.from_frozen_graph(output_graph_path, input_arrays=[x_input_name, style_choose_input_name],output_arrays=[output_name])
       converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
       tflite_model=converter.convert()
-      open("drive/My Drive/XXX/XXX_model_pb.tflite", "wb").write(tflite_model)
+      open("drive/My Drive/XXX/XXX_model_pb.tflite", "wb").write(tflite_model)'''
       generated = output
       '''generated = tf.cast(output, tf.uint8)
       generated = tf.squeeze(generated, [0])'''
@@ -59,11 +63,12 @@ def main(args):
       img_ = cv2.resize(img,(512,512))
       X = np.zeros((1,512,512,3),dtype=np.float32)
       X[0] = img_
+      Style_choose = [0.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
       print('Input shape: ', X.shape)
-      image_transfer = sess.run(generated, feed_dict={input_x: X})
+      image_transfer = sess.run(generated, feed_dict={input_x: X, input_style_choose: Style_choose})
       image_transfer = (image_transfer - image_transfer.min())/(image_transfer.max()-image_transfer.min())
       image_transfer = (image_transfer * 255).astype('uint8')
-      misc.imsave('drive/My Drive/XXX/XXX_style_transfer.jpg', image_transfer)
+      misc.imsave('style_transfer3.jpg', image_transfer)
       print('Output shape: ', image_transfer.shape)
       
       end_time = time.time()
@@ -74,6 +79,3 @@ if __name__ == '__main__':
     print(args)
     main(args)
     pb_path = args.model_name
-
-				 
-
