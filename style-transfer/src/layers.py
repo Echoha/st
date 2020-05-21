@@ -63,18 +63,17 @@ def conditional_instance_norm(net, style_control=None, name='cond_in'):
         var_shape = [channels]
         shift = []
         scale = []
-
-        for i in range(len(style_control)):
+        for i in range(style_control.shape[0]):
             with tf.variable_scope('{0}'.format(i) + '_style'):
                 shift.append(tf.get_variable('shift', shape=var_shape, initializer=tf.constant_initializer(0.)))
                 scale.append(tf.get_variable('scale', shape=var_shape, initializer=tf.constant_initializer(1.)))
         epsilon = 1e-3
         normalized = (net-mu)/(sigma_sq + epsilon)**(.5)
 
-        idx = [i for i, x in enumerate(style_control) if not x == 0]
+        idx = [i for i in range(style_control.shape[0]) if not style_control[i] == 0]
 
-        style_scale = reduce(tf.add, [scale[i]*style_control[i] for i in idx]) / sum(style_control)
-        style_shift = reduce(tf.add, [shift[i]*style_control[i] for i in idx]) / sum(style_control)
+        style_scale = reduce(tf.add, [scale[i]*style_control[i] for i in idx]) / tf.reduce_sum(style_control)
+        style_shift = reduce(tf.add, [shift[i]*style_control[i] for i in idx]) / tf.reduce_sum(style_control)
         output = style_scale * normalized + style_shift
 
     return output
@@ -90,9 +89,6 @@ def instance_norm(net, train=True, name='in'):
         epsilon = 1e-3
         normalized = (net-mu)/(sigma_sq + epsilon)**(.5)
     return scale * normalized + shift
-
-def pooling(input):
-    return tf.nn.avg_pool(input, ksize=(1, 2, 2, 1), strides=(1, 1, 1, 1), padding='SAME')
 
 
 def total_variation(preds):
