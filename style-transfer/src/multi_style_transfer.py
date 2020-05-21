@@ -14,7 +14,7 @@ class mst(op):
         with tf.variable_scope(tf.get_variable_scope(), reuse=reuse):
             b,h,w,c = x.get_shape().as_list()
 
-            x = conv_layer(x, int(alpha*32), 9, 1, style_control=style_control, name='conv1')
+            x = conv_layer(x, 32, 6, 1, style_control=style_control, name='conv1')
             x = conv_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='conv2')
             x = conv_layer(x, int(alpha*128), 3, 2, style_control=style_control, name='conv3')
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res1')
@@ -22,10 +22,8 @@ class mst(op):
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res3')
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res4')
             x = residual_block(x, int(alpha*128), 3, style_control=style_control, name='res5')
-            x = conv_tranpose_layer(x, int(alpha*64), 3, 2, style_control=style_control, name='up_conv1')
-            # x = pooling(x)
-            x = conv_tranpose_layer(x, int(alpha*32), 3, 2, style_control=style_control, name='up_conv2')
-            # x = pooling(x)
+            x = conv_tranpose_layer(x, int(alpha*64), 4, 2, style_control=style_control, name='up_conv1')
+            x = conv_tranpose_layer(x, int(alpha*32), 4, 2, style_control=style_control, name='up_conv2')
             x = conv_layer(x, 3, 9, 1, relu=False, style_control=style_control,  name='output')
             preds = tf.nn.tanh(x) * 150 + 255./2
         return preds
@@ -36,19 +34,18 @@ class mst(op):
         # content_input
         b = self.batch_size; h = self.content_data_size; w = self.content_data_size;
         self.content_input = tf.placeholder(tf.float32, shape=[b, h, w, 3], name='content_input')
+        self.style_choose = tf.placeholder(tf.float32, shape=[16], name='style_choose')
 
         # style_input
         style_img = get_img(self.style_image)
-        style_idx = [i for i, x in enumerate(self.style_control) if not x == 0][0]
+        style_idx = [i for i in range(self.style_choose.shape[0]) if not self.style_choose[i] == 0][0]
         print('style_idx : {}'.format(style_idx))
         style_input = tf.constant((style_img[np.newaxis, ...]), dtype=tf.float32)
 
         # MST_output (Pastiche)
-        MST_output = self.mst_net(self.content_input, alpha = self.alpha, style_control=self.style_control)
+        MST_output = self.mst_net(self.content_input, alpha = self.alpha, style_control=self.style_choose)
 
         # VGG network
-        # VGG19 pat
-        # weights = scipy.io.loadmat(r'E:\毕设\STYLE_TRANSFER\workspace\style-transfer\data\vgg19\imagenet-vgg-verydeep-19.mat')
         weights = scipy.io.loadmat('st/style-transfer/data/imagenet-vgg-verydeep-19.mat')
         vgg_mean = tf.constant(np.array([103.939, 116.779, 123.68]).reshape((1, 1, 1, 3)), dtype='float32')
 
