@@ -98,18 +98,19 @@ class op(object):
 
                 batch_files = data[idx * self.batch_size: (idx + 1) * self.batch_size]
                 batch_label = [(get_img(batch_file, (self.content_data_size,self.content_data_size,3))) for batch_file in batch_files]
+                
 
-                feeds = {self.content_input: batch_label}
+                feeds = {self.content_input: batch_label, self.style_choose: self.style_control}
 
                 _, loss_all, loss_c, loss_s, loss_tv = self.sess.run(self.optimize, feed_dict=feeds)
                 train_time = time.time() - start_time
-                if count % int((self.niter_snapshot - 1) / 2) == 1 :
+                if count % self.niter_snapshot/2 == 0 :
                   print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
                       % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                 
                 
                 ## Test during Training
-                if count % self.niter_snapshot == (self.niter_snapshot-1):
+                if count % self.niter_snapshot == 0 or count % batch_idxs == 0:
                     print("Epoch: [%2d] [%4d/%4d] time: %4.4f, loss: %.4f, loss_c: %.4f, loss_s: %.4f, loss_tv: %.4f"
                         % (epoch, idx, batch_idxs, train_time, loss_all, loss_c, loss_s, loss_tv))
                     self.count = count
@@ -124,8 +125,7 @@ class op(object):
       else:
 
         self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, 'multi.jpg'))
-      
-        # self.evaluate_img(img_in=self.test_image, img_path=os.path.join(self.result_image_dir, self.result_dir + '_'+ str(count)+'.jpg'))
+     
         # Freeze graph.
         # saver = tf.train.Saver()
         if os.path.isdir(self.ckpt_dir):
@@ -171,9 +171,13 @@ class op(object):
           # Declare placeholders we'll feed into the graph
           X_inputs = tf.placeholder(
               tf.float32, [1, 512, 512, 3], name='X_inputs')
+          Style_choose = tf.placeholder(
+              tf.float32, [16], name='Style_choose')
+          # print(self.style_control)
+          # print(type(self.style_control))
 
           # Define output node
-          preds = self.mst_net(X_inputs, alpha=self.alpha, style_control=self.style_control, reuse=True)
+          preds = self.mst_net(X_inputs, alpha=self.alpha, style_control=Style_choose, reuse=True)
           tf.identity(preds[0], name='output')
           
 
@@ -197,7 +201,7 @@ class op(object):
           img = get_img(img_in, img_shape)
           X[0] = img
 
-          _preds = sess.run(preds, feed_dict={X_inputs: X})
+          _preds = sess.run(preds, feed_dict={X_inputs: X, Style_choose: self.style_control})
           save_img(img_path, _preds[0])
 
           # Write graph.
@@ -213,5 +217,3 @@ class op(object):
               self.graph_model_name + '.pb.txt',
               as_text=True)
           print('Save pb and pb.txt done!')
-         
-    
